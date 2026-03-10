@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import bannerRoutes from "./routes/bannerRoutes.js";
+import volunteersRoute from "./routes/volunteers.js";
 dotenv.config();
 
 const app = express();
@@ -21,6 +22,7 @@ connectDB();
 
 app.use("/api/auth", authRoutes);
 app.use("/api/banner", bannerRoutes);
+app.use("/api/volunteers", volunteersRoute);
 
 const PORT = process.env.PORT || 5000;
 
