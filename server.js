@@ -1,12 +1,15 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import dotenv from "dotenv";
-import { connectDB } from "./config/db.js";
+import  connectDB  from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import bannerRoutes from "./routes/bannerRoutes.js";
 import volunteersRoute from "./routes/volunteers.js";
-dotenv.config();
+import membershipRoutes from "./routes/membership.routes.js";
+import eventRoutes from "./routes/event.routes.js"
 
 const app = express();
 
@@ -23,6 +26,8 @@ connectDB();
 app.use("/api/auth", authRoutes);
 app.use("/api/banner", bannerRoutes);
 app.use("/api/volunteers", volunteersRoute);
+app.use("/api/membership", membershipRoutes);
+app.use("/api/events",eventRoutes)
 
 const PORT = process.env.PORT || 5000;
 

@@ -1,5 +1,5 @@
 import Banner from "../models/Banner.js";
-import cloudinary from "../config/cloudinary.js";
+import { uploadToCloudinary } from "../config/cloudinary.js";
 
 export const createBanner = async (req, res) => {
   try {
