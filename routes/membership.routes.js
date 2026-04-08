@@ -6,6 +6,7 @@ import {
   updateMembership,
   updateYoutubeLink,
   deleteMembership,
+  
 } from "../controllers/membership.controller.js";
 
 const router = express.Router();
@@ -30,5 +31,6 @@ router.patch("/:id/youtube", express.json(), updateYoutubeLink);
 
 // DELETE /api/membership/:id    → Delete membership
 router.delete("/:id", deleteMembership);
+
 
 export default router;

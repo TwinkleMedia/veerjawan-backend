@@ -1,35 +1,49 @@
 import { v2 as cloudinary } from "cloudinary";
 
+// ── Configure Cloudinary ────────────────────────────────
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+// ── Upload Base64 File to Cloudinary ────────────────────
 /**
  * Upload a base64 data URI to Cloudinary.
  *
- * @param {string} fileDataUri  - base64 data URI  e.g. "data:image/jpeg;base64,..."
- * @param {string} folder       - Cloudinary folder e.g. "membership/MBR-001/passport"
- * @param {string} publicId     - Public ID          e.g. "passport_photo"
- * @returns {Promise<string>}   - Secure URL of the uploaded image
+ * @param {string} fileDataUri  - base64 string (data:image/jpeg;base64,...)
+ * @param {string} folder       - folder name
+ * @param {string} publicId     - file name
+ * @returns {Promise<{url: string, publicId: string}>}
  */
-const uploadToCloudinary = (fileDataUri, folder, publicId) =>
-  new Promise((resolve, reject) => {
+export const uploadToCloudinary = (fileDataUri, folder, publicId, resourceType = "auto") => {
+  return new Promise((resolve, reject) => {
+    const uploadOptions = {
+      folder,
+      public_id: publicId,
+      overwrite: true,
+      resource_type: resourceType,
+    };
+
+    // Only apply image transformations for non-video uploads
+    if (resourceType !== "video") {
+      uploadOptions.transformation = [
+        { quality: "auto", fetch_format: "auto" },
+      ];
+    }
+
     cloudinary.uploader.upload(
       fileDataUri,
-      {
-        folder,
-        public_id: publicId,
-        overwrite: true,
-        resource_type: "image",
-        transformation: [{ quality: "auto", fetch_format: "auto" }],
-      },
+      uploadOptions,
       (error, result) => {
         if (error) return reject(error);
-        resolve(result.secure_url);
+        resolve({
+          url: result.secure_url,
+          publicId: result.public_id,
+        });
       }
     );
   });
-
-export { uploadToCloudinary };
+};
+// ── DEFAULT EXPORT (IMPORTANT FIX) ──────────────────────
+export default cloudinary;
