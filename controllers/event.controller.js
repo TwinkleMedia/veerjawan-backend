@@ -23,20 +23,20 @@ const createEvent = async (req, res) => {
     }
 
     // Upload image to Cloudinary
-    const imageUrl = await uploadToCloudinary(
-      files.image.dataUri,
-      "events",
-      `event_${Date.now()}`
-    );
+   const image = await uploadToCloudinary(
+  files.image.dataUri,
+  "events",
+  `event_${Date.now()}`
+);
 
-    const event = await Event.create({
-      title: title.trim(),
-      date,
-      time,
-      address: address.trim(),
-      description,
-      imageUrl,
-    });
+const event = await Event.create({
+  title: title.trim(),
+  date,
+  time,
+  address: address.trim(),
+  description,
+  image, // ✅ full object
+});
 
     return res.status(201).json({
       success: true,
@@ -96,13 +96,13 @@ const updateEvent = async (req, res) => {
     });
 
     // Upload new image if provided
-    if (files.image) {
-      updates.imageUrl = await uploadToCloudinary(
-        files.image.dataUri,
-        "events",
-        `event_${req.params.id}`
-      );
-    }
+  if (files.image) {
+  updates.image = await uploadToCloudinary(
+    files.image.dataUri,
+    "events",
+    `event_${req.params.id}`
+  );
+}
 
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ success: false, message: "No fields to update." });
