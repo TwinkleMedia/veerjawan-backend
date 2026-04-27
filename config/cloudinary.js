@@ -45,5 +45,8 @@ export const uploadToCloudinary = (fileDataUri, folder, publicId, resourceType =
     );
   });
 };
+
+export const deleteFromCloudinary = (publicId) =>
+  cloudinary.uploader.destroy(publicId);
 // ── DEFAULT EXPORT (IMPORTANT FIX) ──────────────────────
 export default cloudinary;

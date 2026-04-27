@@ -20,24 +20,31 @@ const makePublicId = (fileName) => {
 // ── POST /api/gallery/upload ────────────────────────────────────────────────
 router.post("/upload", async (req, res) => {
   try {
-    const { title, images = [], videos = [] } = req.body;
+    console.log("Upload body:", {
+      title: req.body.title,
+      imageCount: req.body.images?.length,
+      videoLinks: req.body.videoLinks,
+    });
+
+    const { title, images = [], videoLinks = [] } = req.body;
 
     if (!title?.trim()) {
       return res.status(400).json({ success: false, message: "Title is required." });
     }
 
-    if (images.length === 0 && videos.length === 0) {
+    if (images.length === 0 && videoLinks.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "At least one image or video is required.",
+        message: "At least one image or video link is required.",
       });
     }
 
     const slug = toSlug(title);
     const mediaItems = [];
 
+    // Upload images to Cloudinary
     for (const img of images) {
-      const folder = `galleries/${slug}/images`;
+      const folder   = `galleries/${slug}/images`;
       const publicId = makePublicId(img.name);
 
       const { url, publicId: cloudPublicId } = await uploadToCloudinary(
@@ -50,31 +57,25 @@ router.post("/upload", async (req, res) => {
       mediaItems.push({
         url,
         publicId: cloudPublicId,
-        type: "image",
+        type:     "image",
         fileName: img.name,
-        size: img.size,
+        size:     img.size,
+        isLink:   false,
       });
     }
 
-    for (const vid of videos) {
-      const folder = `galleries/${slug}/videos`;
-      const publicId = makePublicId(vid.name);
-
-      const { url, publicId: cloudPublicId } = await uploadToCloudinary(
-        vid.data,
-        folder,
-        publicId,
-        "video"
-      );
-
+    // Save video links directly — no Cloudinary upload needed
+    for (const link of videoLinks) {
       mediaItems.push({
-        url,
-        publicId: cloudPublicId,
-        type: "video",
-        fileName: vid.name,
-        size: vid.size,
+        url:      link,
+        publicId: link,
+        type:     "video",
+        fileName: link,
+        size:     0,
+        isLink:   true,
       });
     }
+    
 
     const gallery = await Gallery.create({ title: title.trim(), media: mediaItems });
 
@@ -109,9 +110,11 @@ router.delete("/:id", async (req, res) => {
     }
 
     for (const item of gallery.media) {
-      await cloudinary.uploader.destroy(item.publicId, {
-        resource_type: item.type === "video" ? "video" : "image",
-      });
+      if (!item.isLink) {
+        await cloudinary.uploader.destroy(item.publicId, {
+          resource_type: item.type === "video" ? "video" : "image",
+        });
+      }
     }
 
     await gallery.deleteOne();
@@ -125,12 +128,18 @@ router.delete("/:id", async (req, res) => {
 // ── PATCH /api/gallery/:id ──────────────────────────────────────────────────
 router.patch("/:id", async (req, res) => {
   try {
+    console.log("Patch body:", {
+      title: req.body.title,
+      deleteMediaIds: req.body.deleteMediaIds,
+      addVideoLinks: req.body.addVideoLinks,
+    });
+
     const gallery = await Gallery.findById(req.params.id);
     if (!gallery) {
       return res.status(404).json({ success: false, message: "Gallery not found." });
     }
 
-    const { title, deleteMediaIds = [] } = req.body;
+    const { title, deleteMediaIds = [], addVideoLinks = [] } = req.body;
 
     if (title?.trim()) {
       gallery.title = title.trim();
@@ -140,15 +149,32 @@ router.patch("/:id", async (req, res) => {
       const toRemove = gallery.media.filter((m) => deleteMediaIds.includes(m.publicId));
 
       for (const item of toRemove) {
-        await cloudinary.uploader.destroy(item.publicId, {
-          resource_type: item.type === "video" ? "video" : "image",
-        });
+        if (!item.isLink) {
+          await cloudinary.uploader.destroy(item.publicId, {
+            resource_type: item.type === "video" ? "video" : "image",
+          });
+        }
       }
 
       gallery.media = gallery.media.filter((m) => !deleteMediaIds.includes(m.publicId));
     }
 
+    if (addVideoLinks.length > 0) {
+      for (const link of addVideoLinks) {
+        gallery.media.push({
+          url:      link,
+          publicId: link,
+          type:     "video",
+          fileName: link,
+          size:     0,
+          isLink:   true,
+        });
+      }
+    }
+
     await gallery.save();
+
+    console.log("Gallery saved:", gallery);
 
     return res.json({
       success: true,
