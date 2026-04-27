@@ -11,7 +11,7 @@ cloudinary.config({
 /**
  * Upload a base64 data URI to Cloudinary.
  *
- * @param {string} fileDataUri  - base64 string (data:image/jpeg;base64,...)
+ * @param {string} fileDataUri  - base64 string (data:image/jpeg;base64,........)
  * @param {string} folder       - folder name
  * @param {string} publicId     - file name
  * @returns {Promise<{url: string, publicId: string}>}
@@ -48,5 +48,5 @@ export const uploadToCloudinary = (fileDataUri, folder, publicId, resourceType =
 
 export const deleteFromCloudinary = (publicId) =>
   cloudinary.uploader.destroy(publicId);
-// ── DEFAULT EXPORT (IMPORTANT FIX) ──────────────────────
+// ── DEFAULT EXPORT (IMPORTANT FIX) ++++++++++───────────────++++++++
 export default cloudinary;
