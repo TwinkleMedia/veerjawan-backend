@@ -26,7 +26,7 @@ const memberShipAdminSchema = new mongoose.Schema(
     // ── Address Details ────────────────────────────────────────
     address: {
       type:     String,
-      required: [true, "Address is required"],
+      required: [true, "Permanent full address is required"],
       trim:     true,
     },
     pincode: {
@@ -98,7 +98,7 @@ const memberShipAdminSchema = new mongoose.Schema(
     },
 
     // ── Documents (Cloudinary URLs + Public IDs) ───────────────
-    photo: {
+    passportPhoto: {                              // ← NEW
       url:      { type: String, default: "" },
       publicId: { type: String, default: "" },
     },
@@ -106,7 +106,7 @@ const memberShipAdminSchema = new mongoose.Schema(
       url:      { type: String, default: "" },
       publicId: { type: String, default: "" },
     },
-    soldierIdCard: {
+    panCard: {
       url:      { type: String, default: "" },
       publicId: { type: String, default: "" },
     },

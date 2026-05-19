@@ -23,14 +23,18 @@ const martyrSchema = new mongoose.Schema(
       url: String,
       publicId: String,
     },
+    youtubeLink: {
+      type: String,
+      default: "",
+      trim: true,
+    },
 
     certificate: {
       url: String,
       publicId: String,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
-
 
 export default mongoose.model("Martyr", martyrSchema);

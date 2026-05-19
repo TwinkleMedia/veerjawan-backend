@@ -5,7 +5,7 @@ import fs from "fs";
 import path from "path";
 import axios from "axios";
 
-// ── PDF Constants (top-level — accessible everywhere in this file) ────────────
+// ── PDF Constants ─────────────────────────────────────────────────────────────
 const H     = 841.89;
 const SIZE  = 11;
 const ABOVE = 14;
@@ -38,28 +38,32 @@ const uploadToCloudinary = (fileDataUri, folder, publicId) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// @desc    Register a new member
+// @desc    Register a new volunteer member
 // @route   POST /api/membershipAdmin
 // ─────────────────────────────────────────────────────────────────────────────
 export const createMember = async (req, res) => {
   try {
-    const {
-      membershipNumber, date, fullName, dob,
-      address, pincode, district, state,
-      mobile1, mobile2, email,
-      occupation, education, maritalStatus,
-      isAssociated, organizationName, briefDescription,
-      photo, aadharCard, soldierIdCard,
-    } = req.body;
+   const {
+  membershipNumber, date, fullName, dob,
+  address, pincode, district, state,
+  mobile1, mobile2, email,
+  occupation, education, maritalStatus,
+  isAssociated, organizationName, briefDescription,
+  passportPhoto,
+  aadharCard,
+  panCard,
+} = req.body;
 
-    if (!membershipNumber || !date || !fullName || !dob || !address ||
-        !pincode || !district || !state || !mobile1) {
+    // ── Required field validation ─────────────────────────────────────────────
+    if (!membershipNumber || !date || !fullName || !dob ||
+        !address || !pincode || !district || !state || !mobile1) {
       return res.status(400).json({
         success: false,
         message: "Please fill all required fields.",
       });
     }
 
+    // ── Duplicate membership number check ─────────────────────────────────────
     const existing = await MemberShipAdmin.findOne({
       membershipNumber: membershipNumber.trim(),
     });
@@ -72,38 +76,47 @@ export const createMember = async (req, res) => {
 
     const folder = `memberships/${membershipNumber.trim().replace(/\s+/g, "_")}`;
 
-    const [photoResult, aadharResult, soldierResult] = await Promise.all([
-      photo         ? uploadToCloudinary(photo,         folder, "passport_photo")  : Promise.resolve({ url: "", publicId: "" }),
-      aadharCard    ? uploadToCloudinary(aadharCard,    folder, "aadhar_card")     : Promise.resolve({ url: "", publicId: "" }),
-      soldierIdCard ? uploadToCloudinary(soldierIdCard, folder, "soldier_id_card") : Promise.resolve({ url: "", publicId: "" }),
-    ]);
+    // ── Upload documents to Cloudinary ────────────────────────────────────────
+  const [passportResult, aadharResult, panResult] = await Promise.all([
+  passportPhoto
+    ? uploadToCloudinary(passportPhoto, folder, "passport_photo")
+    : Promise.resolve({ url: "", publicId: "" }),
+
+  aadharCard
+    ? uploadToCloudinary(aadharCard, folder, "aadhar_card")
+    : Promise.resolve({ url: "", publicId: "" }),
+
+  panCard
+    ? uploadToCloudinary(panCard, folder, "pan_card")
+    : Promise.resolve({ url: "", publicId: "" }),
+]);
 
     const member = await MemberShipAdmin.create({
-      membershipNumber: membershipNumber.trim(),
+      membershipNumber:  membershipNumber.trim(),
       date,
-      fullName: fullName.trim(),
+      fullName:          fullName.trim(),
       dob,
-      address: address.trim(),
-      pincode: pincode.trim(),
-      district: district.trim(),
+      address:           address.trim(),
+      pincode:           pincode.trim(),
+      district:          district.trim(),
       state,
-      mobile1: mobile1.trim(),
-      mobile2: mobile2?.trim() || "",
-      email: email?.trim() || "",
-      occupation: occupation?.trim() || "",
-      education: education?.trim() || "",
-      maritalStatus: maritalStatus || "",
-      isAssociated: isAssociated || "",
-      organizationName: organizationName?.trim() || "",
-      briefDescription: briefDescription?.trim() || "",
-      photo: photoResult,
-      aadharCard: aadharResult,
-      soldierIdCard: soldierResult,
+      mobile1:           mobile1.trim(),
+      mobile2:           mobile2?.trim()           || "",
+      email:             email?.trim()             || "",
+      occupation:        occupation?.trim()        || "",
+      education:         education?.trim()         || "",
+      maritalStatus:     maritalStatus             || "",
+      isAssociated:      isAssociated              || "",
+      organizationName:  organizationName?.trim()  || "",
+      briefDescription:  briefDescription?.trim()  || "",
+      aadharCard:        aadharResult,
+      passportPhoto:    passportResult,
+      panCard:           panResult,
     });
 
     return res.status(201).json({
       success: true,
-      message: "Membership registered successfully.",
+      message: "Volunteer registered successfully.",
       data: member,
     });
   } catch (err) {
@@ -155,19 +168,19 @@ export const updateMember = async (req, res) => {
     }
 
     const folder = `memberships/${member.membershipNumber.replace(/\s+/g, "_")}`;
-    const { photo, aadharCard, soldierIdCard, ...rest } = req.body;
+    const { aadharCard, panCard, passportPhoto, ...rest } = req.body; // ← extract passportPhoto
 
-    const [photoResult, aadharResult, soldierResult] = await Promise.all([
-      photo         ? uploadToCloudinary(photo,         folder, "passport_photo")  : Promise.resolve(null),
-      aadharCard    ? uploadToCloudinary(aadharCard,    folder, "aadhar_card")     : Promise.resolve(null),
-      soldierIdCard ? uploadToCloudinary(soldierIdCard, folder, "soldier_id_card") : Promise.resolve(null),
+    const [aadharResult, panResult, passportResult] = await Promise.all([
+      aadharCard    ? uploadToCloudinary(aadharCard,    folder, "aadhar_card")    : Promise.resolve(null),
+      panCard       ? uploadToCloudinary(panCard,       folder, "pan_card")       : Promise.resolve(null),
+      passportPhoto ? uploadToCloudinary(passportPhoto, folder, "passport_photo") : Promise.resolve(null), // ← add this
     ]);
 
     const updatePayload = {
       ...rest,
-      ...(photoResult   && { photo: photoResult }),
-      ...(aadharResult  && { aadharCard: aadharResult }),
-      ...(soldierResult && { soldierIdCard: soldierResult }),
+      ...(aadharResult    && { aadharCard:    aadharResult }),
+      ...(panResult       && { panCard:       panResult }),
+      ...(passportResult  && { passportPhoto: passportResult }), // ← add this
     };
 
     const updated = await MemberShipAdmin.findByIdAndUpdate(
@@ -176,19 +189,14 @@ export const updateMember = async (req, res) => {
       { new: true, runValidators: true }
     );
 
-    return res.status(200).json({
-      success: true,
-      message: "Member updated successfully.",
-      data: updated,
-    });
+    return res.status(200).json({ success: true, message: "Member updated successfully.", data: updated });
   } catch (err) {
     console.error("updateMember error:", err);
     return res.status(500).json({ success: false, message: "Internal server error." });
   }
 };
-
 // ─────────────────────────────────────────────────────────────────────────────
-// @desc    Delete member
+// @desc    Delete member + Cloudinary assets
 // @route   DELETE /api/membershipAdmin/:id
 // ─────────────────────────────────────────────────────────────────────────────
 export const deleteMember = async (req, res) => {
@@ -207,9 +215,8 @@ export const deleteMember = async (req, res) => {
       }
     };
 
-    deleteAsset(member.photo?.publicId);
     deleteAsset(member.aadharCard?.publicId);
-    deleteAsset(member.soldierIdCard?.publicId);
+    deleteAsset(member.panCard?.publicId);
 
     const folder = `memberships/${member.membershipNumber.replace(/\s+/g, "_")}`;
     deletePromises.push(cloudinary.api.delete_folder(folder).catch(() => {}));
@@ -231,80 +238,136 @@ export const deleteMember = async (req, res) => {
 export const downloadMemberPdf = async (req, res) => {
   try {
     const member = await MemberShipAdmin.findById(req.params.id);
-    if (!member) {
-      return res.status(404).json({ success: false, message: "Member not found." });
-    }
+    if (!member) return res.status(404).json({ success: false, message: "Member not found." });
 
-    // ── Load PDF template ─────────────────────────────────────────────────────
-    const pdfPath = path.join(process.cwd(), "templates", "Veer Nari_Form.pdf");
+    const pdfPath = path.join(process.cwd(), "templates", "VJG_MembershipForm.pdf");
     const existingPdfBytes = fs.readFileSync(pdfPath);
     const pdfDoc = await PDFDocument.load(existingPdfBytes);
     const page  = pdfDoc.getPages()[0];
     const font  = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const BLACK = rgb(0, 0, 0);
 
-    // ── Draw helper (uses H, SIZE, ABOVE from top-level constants) ────────────
+    const H     = 841.89;
+    const SIZE  = 10;
+    const ABOVE = 13;
+
     const draw = (text, x, underlineTop, size = SIZE) => {
       if (!text) return;
       const y = H - underlineTop - size + ABOVE;
       page.drawText(String(text), { x, y, size, font, color: BLACK });
     };
 
-    // ── Passport photo ────────────────────────────────────────────────────────
-    // ── Passport photo ────────────────────────────────────────────────────────
-if (member.photo?.url) {
+    const trunc = (str, maxChars) => (str || "").slice(0, maxChars);
+
+    const fmtDate = (d) => {
+      if (!d) return "";
+      const dt = new Date(d);
+      if (isNaN(dt)) return String(d);
+      return `${String(dt.getDate()).padStart(2, "0")}/${String(dt.getMonth() + 1).padStart(2, "0")}/${dt.getFullYear()}`;
+    };
+
+    // ── Passport Photo ─────────────────────────────────────────────────────────
+    // Box in PDF: x=448.2, y_bottom=556.6, width=99.2, height=127.5 (pdf-lib coords)
+   // ── Passport Photo ─────────────────────────────────────────────────────────
+if (member.passportPhoto?.url) {
   try {
-    const jpgUrl = member.photo.url.replace("/upload/", "/upload/f_jpg/");
-    const response = await axios.get(jpgUrl, { responseType: "arraybuffer" });
-    const image = await pdfDoc.embedJpg(response.data);
+    let photoUrl = member.passportPhoto.url;
+    if (photoUrl.includes("cloudinary.com")) {
+      photoUrl = photoUrl.replace("/upload/", "/upload/f_jpg,q_90/");
+    }
 
-    // Exact box coordinates matching the form's photo box
-    const boxX      = 448;   // left edge of box
-    const boxY      = 568;   // bottom edge of box (PDF coords from bottom)
-    const boxWidth  = 100;    // box width
-    const boxHeight = 110
-    ;   // box height — fills the full box now
+    const response = await axios.get(photoUrl, {
+      responseType: "arraybuffer",
+    });
 
-    const dims = image.scale(1);
+    // ✅ THE FIX: convert ArrayBuffer → Buffer so pdf-lib can read it
+    const imageBytes = Buffer.from(response.data);
+
+    // Check actual magic bytes to decide format
+    const isJpeg = imageBytes[0] === 0xff && imageBytes[1] === 0xd8;
+    const isPng  = imageBytes[0] === 0x89 && imageBytes[1] === 0x50;
+
+    let image;
+    if (isPng) {
+      image = await pdfDoc.embedPng(imageBytes);
+    } else if (isJpeg) {
+      image = await pdfDoc.embedJpg(imageBytes);
+    } else {
+      console.log("❌ Unknown format, first bytes:", imageBytes.slice(0, 4).toString("hex"));
+      throw new Error("Unsupported image format");
+    }
+
+    const boxWidth  = 99.2;
+    const boxHeight = 127.5;
+    const x = 448.2;
+    const y = H - 285.3;
+
+    const dims  = image.scale(1);
     const ratio = Math.min(boxWidth / dims.width, boxHeight / dims.height);
-    const imgW = dims.width  * ratio;
-    const imgH = dims.height * ratio;
 
     page.drawImage(image, {
-      x: boxX + (boxWidth  - imgW) / 2,
-      y: boxY + (boxHeight - imgH) / 2,
-      width:  imgW,
-      height: imgH,
+      x: x + (boxWidth  - dims.width  * ratio) / 2,
+      y: y + (boxHeight - dims.height * ratio) / 2,
+      width:  dims.width  * ratio,
+      height: dims.height * ratio,
     });
+
   } catch (err) {
-    console.log("Photo embed failed:", err.message);
+    console.log("❌ Passport photo load failed:", err.message);
   }
 }
-    // ── Fill form fields ──────────────────────────────────────────────────────
-    draw(member.membershipNumber,      90,  258.54);
-    draw(fmtDate(member.date),        297,  258.54);
+    // Row 1 — Membership number & Date
+    draw(trunc(member.membershipNumber, 20),     89,  258.5);
+    draw(fmtDate(member.date),                  296,  258.5);
 
-    draw(member.fullName,              84,  322.06);
+    // Row 2 — Full name
+    draw(trunc(member.fullName, 40),            140,  285.2);
 
-    const desc = member.briefDescription || "";
-    draw(desc.slice(0, 28),           326,  440.69);
-    draw(desc.slice(28, 88),           28,  471.87);
-    draw(desc.slice(88, 148),          28,  500.21);
+    // Row 3 — DOB
+    draw(fmtDate(member.dob),                   390,  315.1);
 
-    draw(member.fullName,             113,  529.13);
-    draw(member.education,            412,  529.13);
-
-    draw(member.mobile1,              108,  617.56);
-    draw(member.mobile2,              354,  617.56);
-
+    // Row 4 & 5 — Address (split across 2 lines)
     const fullAddress = `${member.address || ""}, ${member.pincode || ""}`;
-    draw(fullAddress.slice(0, 62),    115,  647.07);
-    draw(fullAddress.slice(62, 134),   28,  675.42);
+    draw(trunc(fullAddress, 55),                113,  344.1);
+    if (fullAddress.length > 55) {
+      draw(trunc(fullAddress.slice(55), 70),     28,  372.4);
+    }
 
-    draw(member.district,              72,  703.77);
-    draw(member.state,                354,  703.77);
+    // Row 6 — Pincode
+    draw(trunc(member.pincode, 15),             376,  400.8);
 
-    // ── Save and send ─────────────────────────────────────────────────────────
+    // Row 7 — District & State
+    draw(trunc(member.district, 28),             71,  435.0);
+    draw(trunc(member.state, 20),               353,  435.0);
+
+    // Row 8 — Mobile 1 & Mobile 2
+    draw(trunc(member.mobile1, 18),             107,  469.3);
+    draw(trunc(member.mobile2 || "", 18),       353,  469.3);
+
+    // Row 9 — Email
+    draw(trunc(member.email || "", 50),          64,  498.7);
+
+    // Row 10 — Occupation
+    draw(trunc(member.occupation || "", 50),     76,  528.2);
+
+    // Row 11 — Education & Marital status
+    draw(trunc(member.education || "", 28),      70,  557.7);
+    draw(trunc(member.maritalStatus || "", 14), 424,  557.7);
+
+    // Row 12 — Is associated with other org?
+    draw(trunc(member.isAssociated || "", 30),  246,  587.2);
+
+    // Row 13 — Organization name (only if associated)
+    if (member.isAssociated === "Yes") {
+      draw(trunc(member.organizationName || "", 55), 77, 616.7);
+    }
+
+    // Row 14 & 15 — Brief description (split across 2 lines)
+    const desc = member.briefDescription || "";
+    draw(trunc(desc, 52),                       119,  643.9);
+    draw(trunc(desc.slice(52), 70),              28,  671.1);
+
+    // ── Save and send ──────────────────────────────────────────────────────────
     const pdfBytes = await pdfDoc.save();
     const safeFileName = (member.fullName || "Member")
       .replace(/[^a-zA-Z0-9\s]/g, "")
@@ -312,15 +375,11 @@ if (member.photo?.url) {
       .replace(/\s+/g, "_");
 
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename="${safeFileName}_Membership.pdf"`);
+    res.setHeader("Content-Disposition", `attachment; filename="${safeFileName}_Volunteer.pdf"`);
     res.send(Buffer.from(pdfBytes));
 
   } catch (error) {
     console.error("downloadMemberPdf error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "PDF generation failed.",
-      error: error.message,
-    });
+    return res.status(500).json({ success: false, message: "PDF generation failed.", error: error.message });
   }
 };
