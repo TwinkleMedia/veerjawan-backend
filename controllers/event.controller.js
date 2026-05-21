@@ -12,31 +12,38 @@ const createEvent = async (req, res) => {
 
     // Validate required fields
     const missing = ["title", "date", "time", "address"].filter(
-      (k) => !fields[k] || String(fields[k]).trim() === ""
+      (k) => !fields[k] || String(fields[k]).trim() === "",
     );
     if (missing.length > 0) {
-      return res.status(400).json({ success: false, message: `Missing required fields: ${missing.join(", ")}` });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: `Missing required fields: ${missing.join(", ")}`,
+        });
     }
 
     if (!files.image) {
-      return res.status(400).json({ success: false, message: "Event image is required." });
+      return res
+        .status(400)
+        .json({ success: false, message: "Event image is required." });
     }
 
     // Upload image to Cloudinary
-   const image = await uploadToCloudinary(
-  files.image.dataUri,
-  "events",
-  `event_${Date.now()}`
-);
+    const image = await uploadToCloudinary(
+      files.image.dataUri,
+      "events",
+      `event_${Date.now()}`,
+    );
 
-const event = await Event.create({
-  title: title.trim(),
-  date,
-  time,
-  address: address.trim(),
-  description,
-  image, // ✅ full object
-});
+    const event = await Event.create({
+      title: title.trim(),
+      date,
+      time,
+      address: address.trim(),
+      description,
+      image, // ✅ full object
+    });
 
     return res.status(201).json({
       success: true,
@@ -45,7 +52,9 @@ const event = await Event.create({
     });
   } catch (error) {
     console.error("createEvent error:", error);
-    return res.status(500).json({ success: false, message: "Internal server error." });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error." });
   }
 };
 
@@ -54,10 +63,14 @@ const event = await Event.create({
 const getAllEvents = async (req, res) => {
   try {
     const events = await Event.find().sort({ createdAt: -1 }).select("-__v");
-    return res.status(200).json({ success: true, count: events.length, data: events });
+    return res
+      .status(200)
+      .json({ success: true, count: events.length, data: events });
   } catch (error) {
     console.error("getAllEvents error:", error);
-    return res.status(500).json({ success: false, message: "Internal server error." });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error." });
   }
 };
 
@@ -65,11 +78,16 @@ const getAllEvents = async (req, res) => {
 const getEventById = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id).select("-__v");
-    if (!event) return res.status(404).json({ success: false, message: "Event not found." });
+    if (!event)
+      return res
+        .status(404)
+        .json({ success: false, message: "Event not found." });
     return res.status(200).json({ success: true, data: event });
   } catch (error) {
     console.error("getEventById error:", error);
-    return res.status(500).json({ success: false, message: "Internal server error." });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error." });
   }
 };
 
@@ -79,12 +97,12 @@ const updateEvent = async (req, res) => {
   try {
     const contentType = req.headers["content-type"] || "";
     let fields = {};
-    let files  = {};
+    let files = {};
 
     if (contentType.includes("multipart/form-data")) {
       const parsed = await parseMultipart(req);
       fields = parsed.fields;
-      files  = parsed.files;
+      files = parsed.files;
     } else {
       fields = req.body;
     }
@@ -96,30 +114,39 @@ const updateEvent = async (req, res) => {
     });
 
     // Upload new image if provided
-  if (files.image) {
-  updates.image = await uploadToCloudinary(
-    files.image.dataUri,
-    "events",
-    `event_${req.params.id}`
-  );
-}
+    if (files.image) {
+      updates.image = await uploadToCloudinary(
+        files.image.dataUri,
+        "events",
+        `event_${req.params.id}`,
+      );
+    }
 
     if (Object.keys(updates).length === 0) {
-      return res.status(400).json({ success: false, message: "No fields to update." });
+      return res
+        .status(400)
+        .json({ success: false, message: "No fields to update." });
     }
 
     const event = await Event.findByIdAndUpdate(
       req.params.id,
       { $set: updates },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     ).select("-__v");
 
-    if (!event) return res.status(404).json({ success: false, message: "Event not found." });
+    if (!event)
+      return res
+        .status(404)
+        .json({ success: false, message: "Event not found." });
 
-    return res.status(200).json({ success: true, message: "Event updated.", data: event });
+    return res
+      .status(200)
+      .json({ success: true, message: "Event updated.", data: event });
   } catch (error) {
     console.error("updateEvent error:", error);
-    return res.status(500).json({ success: false, message: "Internal server error." });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error." });
   }
 };
 
@@ -127,11 +154,18 @@ const updateEvent = async (req, res) => {
 const deleteEvent = async (req, res) => {
   try {
     const event = await Event.findByIdAndDelete(req.params.id);
-    if (!event) return res.status(404).json({ success: false, message: "Event not found." });
-    return res.status(200).json({ success: true, message: `Event "${event.title}" deleted.` });
+    if (!event)
+      return res
+        .status(404)
+        .json({ success: false, message: "Event not found." });
+    return res
+      .status(200)
+      .json({ success: true, message: `Event "${event.title}" deleted.` });
   } catch (error) {
     console.error("deleteEvent error:", error);
-    return res.status(500).json({ success: false, message: "Internal server error." });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error." });
   }
 };
 
