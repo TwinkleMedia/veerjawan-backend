@@ -1,5 +1,5 @@
 import cloudinary from "../config/cloudinary.js";
-import MemberShipAdmin from "../models/MemberShipAdmin.model.js";
+import MemberShipAdmin from "../models/memberShipAdmin.model.js";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import fs from "fs";
 import path from "path";
