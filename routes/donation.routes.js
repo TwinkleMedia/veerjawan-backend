@@ -6,5 +6,6 @@ const router = express.Router();
 router.post("/create-order", createOrder);
 router.post("/verify-payment", verifyPayment);
 router.get("/all", getAllDonations);
+router.delete("/:id", deleteDonation);
 
 export default router;
