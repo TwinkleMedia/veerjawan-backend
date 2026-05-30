@@ -15,7 +15,7 @@ const getRazorpay = () => {
 // POST /api/donation/create-order
 export const createOrder = async (req, res) => {
   try {
-    const { name, email, contact, amount } = req.body;
+    const { name, email, contact, amount, wants80G, panNumber, address } = req.body;
 
     if (!name || !email || !contact || !amount) {
       return res.status(400).json({ success: false, message: "All fields are required." });
@@ -23,6 +23,16 @@ export const createOrder = async (req, res) => {
 
     if (isNaN(amount) || Number(amount) < 1) {
       return res.status(400).json({ success: false, message: "Invalid donation amount." });
+    }
+
+    // 80G validation on server side
+    if (wants80G === true) {
+      if (!panNumber || !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(panNumber.trim().toUpperCase())) {
+        return res.status(400).json({ success: false, message: "Valid PAN number is required for 80G receipt." });
+      }
+      if (!address || !address.trim()) {
+        return res.status(400).json({ success: false, message: "Address is required for 80G receipt." });
+      }
     }
 
     const razorpay = getRazorpay();
@@ -42,7 +52,15 @@ export const createOrder = async (req, res) => {
       amount: order.amount,
       currency: order.currency,
       keyId: process.env.RAZORPAY_KEY_ID,
-      donorInfo: { name, email, contact, amount: Number(amount) },
+      donorInfo: {
+        name,
+        email,
+        contact,
+        amount: Number(amount),
+        wants80G: wants80G === true,
+        panNumber: wants80G === true ? panNumber.trim().toUpperCase() : null,
+        address: wants80G === true ? address.trim() : null,
+      },
     });
   } catch (error) {
     console.error("Razorpay create order error:", error);
@@ -79,6 +97,9 @@ export const verifyPayment = async (req, res) => {
       email: donorInfo.email,
       contact: donorInfo.contact,
       amount: donorInfo.amount,
+      wants80G: donorInfo.wants80G ?? false,
+      panNumber: donorInfo.panNumber ?? null,
+      address: donorInfo.address ?? null,
       razorpayOrderId: razorpay_order_id,
       razorpayPaymentId: razorpay_payment_id,
       razorpaySignature: razorpay_signature,
@@ -96,8 +117,7 @@ export const verifyPayment = async (req, res) => {
   }
 };
 
-
-
+// GET /api/donation/all
 export const getAllDonations = async (req, res) => {
   try {
     const donations = await Donation.find({ status: "success" })

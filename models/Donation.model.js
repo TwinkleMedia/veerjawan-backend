@@ -22,6 +22,20 @@ const donationSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    wants80G: {
+      type: Boolean,
+      default: false,
+    },
+    panNumber: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    address: {
+      type: String,
+      default: null,
+      trim: true,
+    },
     razorpayOrderId: {
       type: String,
       required: true,

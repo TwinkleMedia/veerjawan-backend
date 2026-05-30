@@ -30,13 +30,14 @@ app.set("trust proxy", 1);
 // ─────────────────────────────────────────────
 app.use(
   cors({
-  origin: [
-    process.env.CLIENT_URL,
-    process.env.ADMIN_URL
-  ],
+    origin: [
+      process.env.CLIENT_URL,
+      process.env.CLIENT_URL_WWW,
+      process.env.ADMIN_URL,
+    ],
 
     credentials: true,
-  })
+  }),
 );
 
 // ─────────────────────────────────────────────
@@ -48,7 +49,7 @@ app.use(
   express.urlencoded({
     limit: "100mb",
     extended: true,
-  })
+  }),
 );
 
 // ─────────────────────────────────────────────
@@ -95,7 +96,7 @@ app.use("/api", certificateRoutes);
 // SERVER
 // ─────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
-console.log("deploy test");
+console.log("deploy test 1");
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
