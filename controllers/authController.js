@@ -12,10 +12,15 @@ export const loginAdmin = async (req, res) => {
       });
     }
 
-    res.cookie("admin", "true", {
+res.cookie("adminAuth", "true", {
       httpOnly: true,
+      secure: false,
+      sameSite: "lax",
       path: "/",
     });
+
+
+
 
     res.json({
       message: "Login successful",
