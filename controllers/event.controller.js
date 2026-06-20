@@ -8,25 +8,21 @@ const createEvent = async (req, res) => {
   try {
     const { fields, files } = await parseMultipart(req);
 
-    const { title, date, time, address, description = "" } = fields;
+    const { title, date, time, address, description = "", bookingLink = "" } = fields;
 
     // Validate required fields
     const missing = ["title", "date", "time", "address"].filter(
       (k) => !fields[k] || String(fields[k]).trim() === "",
     );
     if (missing.length > 0) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: `Missing required fields: ${missing.join(", ")}`,
-        });
+      return res.status(400).json({
+        success: false,
+        message: `Missing required fields: ${missing.join(", ")}`,
+      });
     }
 
     if (!files.image) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Event image is required." });
+      return res.status(400).json({ success: false, message: "Event image is required." });
     }
 
     // Upload image to Cloudinary
@@ -42,7 +38,8 @@ const createEvent = async (req, res) => {
       time,
       address: address.trim(),
       description,
-      image, // ✅ full object
+      bookingLink,
+      image,
     });
 
     return res.status(201).json({
@@ -52,9 +49,7 @@ const createEvent = async (req, res) => {
     });
   } catch (error) {
     console.error("createEvent error:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal server error." });
+    return res.status(500).json({ success: false, message: "Internal server error." });
   }
 };
 
@@ -63,14 +58,10 @@ const createEvent = async (req, res) => {
 const getAllEvents = async (req, res) => {
   try {
     const events = await Event.find().sort({ createdAt: -1 }).select("-__v");
-    return res
-      .status(200)
-      .json({ success: true, count: events.length, data: events });
+    return res.status(200).json({ success: true, count: events.length, data: events });
   } catch (error) {
     console.error("getAllEvents error:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal server error." });
+    return res.status(500).json({ success: false, message: "Internal server error." });
   }
 };
 
@@ -79,15 +70,11 @@ const getEventById = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id).select("-__v");
     if (!event)
-      return res
-        .status(404)
-        .json({ success: false, message: "Event not found." });
+      return res.status(404).json({ success: false, message: "Event not found." });
     return res.status(200).json({ success: true, data: event });
   } catch (error) {
     console.error("getEventById error:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal server error." });
+    return res.status(500).json({ success: false, message: "Internal server error." });
   }
 };
 
@@ -107,7 +94,7 @@ const updateEvent = async (req, res) => {
       fields = req.body;
     }
 
-    const allowedFields = ["title", "date", "time", "address", "description"];
+    const allowedFields = ["title", "date", "time", "address", "description", "bookingLink"];
     const updates = {};
     allowedFields.forEach((f) => {
       if (fields[f] !== undefined) updates[f] = fields[f];
@@ -123,9 +110,7 @@ const updateEvent = async (req, res) => {
     }
 
     if (Object.keys(updates).length === 0) {
-      return res
-        .status(400)
-        .json({ success: false, message: "No fields to update." });
+      return res.status(400).json({ success: false, message: "No fields to update." });
     }
 
     const event = await Event.findByIdAndUpdate(
@@ -135,18 +120,12 @@ const updateEvent = async (req, res) => {
     ).select("-__v");
 
     if (!event)
-      return res
-        .status(404)
-        .json({ success: false, message: "Event not found." });
+      return res.status(404).json({ success: false, message: "Event not found." });
 
-    return res
-      .status(200)
-      .json({ success: true, message: "Event updated.", data: event });
+    return res.status(200).json({ success: true, message: "Event updated.", data: event });
   } catch (error) {
     console.error("updateEvent error:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal server error." });
+    return res.status(500).json({ success: false, message: "Internal server error." });
   }
 };
 
@@ -155,17 +134,11 @@ const deleteEvent = async (req, res) => {
   try {
     const event = await Event.findByIdAndDelete(req.params.id);
     if (!event)
-      return res
-        .status(404)
-        .json({ success: false, message: "Event not found." });
-    return res
-      .status(200)
-      .json({ success: true, message: `Event "${event.title}" deleted.` });
+      return res.status(404).json({ success: false, message: "Event not found." });
+    return res.status(200).json({ success: true, message: `Event "${event.title}" deleted.` });
   } catch (error) {
     console.error("deleteEvent error:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal server error." });
+    return res.status(500).json({ success: false, message: "Internal server error." });
   }
 };
 

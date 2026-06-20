@@ -1,4 +1,4 @@
-import mongoose  from "mongoose";
+import mongoose from "mongoose";
 
 const eventSchema = new mongoose.Schema(
   {
@@ -7,13 +7,15 @@ const eventSchema = new mongoose.Schema(
     time:        { type: String, required: true },
     address:     { type: String, required: true, trim: true },
     description: { type: String, trim: true, default: "" },
+    bookingLink: { type: String, trim: true, default: "" },
 
     image: {
-      url: { type: String, required: true },
+      url:      { type: String, required: true },
       publicId: { type: String, required: true },
     },
   },
-  { timestamps: true } // ⚠️ also fix this (you wrote timeseries ❌)
+  { timestamps: true }
 );
-const Event = mongoose.model("Event",eventSchema);
+
+const Event = mongoose.model("Event", eventSchema);
 export default Event;
