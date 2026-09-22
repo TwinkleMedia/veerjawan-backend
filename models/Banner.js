@@ -1,18 +1,20 @@
 import mongoose from "mongoose";
 
-const BannerSchema = new mongoose.Schema({
-  imageUrl: {
-    type: String,
-    required: true
+const BannerSchema = new mongoose.Schema(
+  {
+    imageUrl: {
+      type: String,
+      required: true,
+    },
+
+    fileKey: {
+      type: String,
+      required: true,
+    },
   },
-  public_id: {
-    type: String,
-    required: true
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
+  {
+    timestamps: true,
   }
-});
+);
 
 export default mongoose.model("Banner", BannerSchema);

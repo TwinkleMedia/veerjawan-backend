@@ -1,5 +1,10 @@
+
+import { PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { randomUUID } from "crypto";
+import r2 from "../config/r2.js";
 import Banner from "../models/Banner.js";
-import cloudinary from "../config/cloudinary.js"; // ✅ import the default export
+// import cloudinary from "../config/cloudinary.js"; // ✅ import the default export
 
 export const createBanner = async (req, res) => {
   try {
@@ -47,5 +52,57 @@ export const deleteBanner = async (req, res) => {
   } catch (error) {
     console.error(error); // ✅ now you'll see the real error in terminal
     res.status(500).json({ error: "Delete failed" });
+  }
+};
+
+
+export const getUploadUrl = async (req, res) => {
+  try {
+    const { fileName, contentType } = req.body;
+
+    if (!fileName || !contentType) {
+      return res.status(400).json({
+        error: "fileName and contentType are required",
+      });
+    }
+
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/gif",
+    ];
+
+    if (!allowedTypes.includes(contentType)) {
+      return res.status(400).json({
+        error: "Only JPG, PNG, WEBP and GIF images are allowed",
+      });
+    }
+
+    const extension = fileName.split(".").pop().toLowerCase();
+
+    const fileKey = `banners/${randomUUID()}.${extension}`;
+
+    const command = new PutObjectCommand({
+      Bucket: process.env.R2_BUCKET_NAME,
+      Key: fileKey,
+      ContentType: contentType,
+    });
+
+    const uploadUrl = await getSignedUrl(r2, command, {
+      expiresIn: 300,
+    });
+
+    return res.json({
+      success: true,
+      uploadUrl,
+      fileKey,
+    });
+  } catch (error) {
+    console.error("R2 upload URL error:", error);
+
+    return res.status(500).json({
+      error: "Failed to generate upload URL",
+    });
   }
 };
