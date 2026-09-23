@@ -7,11 +7,14 @@ const certificateSchema = new mongoose.Schema(
       required: [true, "Certificate title is required"],
       trim: true,
     },
+
     imageUrl: {
       type: String,
       required: true,
     },
-    cloudinaryPublicId: {
+
+    // Cloudflare R2 object key
+    fileKey: {
       type: String,
       required: true,
     },
@@ -20,4 +23,5 @@ const certificateSchema = new mongoose.Schema(
 );
 
 const Certificate = mongoose.model("Certificate", certificateSchema);
+
 export default Certificate;
