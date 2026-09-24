@@ -128,13 +128,26 @@ const parseMultipart = async (req) => {
 
   return new Promise((resolve, reject) => {
     let busboy;
+    let settled = false;
+
+    const safeReject = (error) => {
+      if (settled) return;
+      settled = true;
+      reject(error);
+    };
+
+    const safeResolve = (result) => {
+      if (settled) return;
+      settled = true;
+      resolve(result);
+    };
 
     try {
       busboy = Busboy({
         headers: req.headers,
       });
     } catch (error) {
-      reject(new Error("Invalid multipart request"));
+      safeReject(new Error("Invalid multipart request"));
       return;
     }
 
@@ -165,6 +178,11 @@ const parseMultipart = async (req) => {
         }
       });
 
+      // ★ Prevent an unhandled stream error from crashing the process
+      fileStream.on("error", (error) => {
+        safeReject(error);
+      });
+
       fileStream.on("end", () => {
         files[fieldName] = {
           filename,
@@ -180,14 +198,24 @@ const parseMultipart = async (req) => {
     });
 
     busboy.on("error", (error) => {
-      reject(error);
+      safeReject(error);
     });
 
     busboy.on("finish", () => {
-      resolve({
+      safeResolve({
         fields,
         files,
       });
+    });
+
+    // ★ Catch errors on the request stream itself (e.g. client disconnects mid-upload)
+    req.on("error", (error) => {
+      safeReject(error);
+    });
+
+    // ★ Catch client aborting the request (common on flaky mobile connections)
+    req.on("aborted", () => {
+      safeReject(new Error("Request aborted by client"));
     });
 
     req.pipe(busboy);
