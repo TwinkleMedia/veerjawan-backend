@@ -1,5 +1,7 @@
 import express from "express";
+
 import {
+  getEventUploadUrl,
   createEvent,
   getAllEvents,
   getEventById,
@@ -9,19 +11,64 @@ import {
 
 const router = express.Router();
 
-// POST   /api/events        → Create event (multipart/form-data)
-router.post("/", createEvent);
+// ─────────────────────────────────────────────
+// POST /api/events/upload-url
+// Generate Cloudflare R2 upload URL
+// ─────────────────────────────────────────────
 
-// GET    /api/events        → Get all events
-router.get("/", getAllEvents);
+router.post(
+  "/upload-url",
+  getEventUploadUrl
+);
 
-// GET    /api/events/:id    → Get single event
-router.get("/:id", getEventById);
+// ─────────────────────────────────────────────
+// POST /api/events
+// Create event
+// ─────────────────────────────────────────────
 
-// PUT    /api/events/:id    → Update event (JSON or multipart)
-router.put("/:id", updateEvent);
+router.post(
+  "/",
+  createEvent
+);
 
-// DELETE /api/events/:id    → Delete event
-router.delete("/:id", deleteEvent);
+// ─────────────────────────────────────────────
+// GET /api/events
+// Get all events
+// ─────────────────────────────────────────────
+
+router.get(
+  "/",
+  getAllEvents
+);
+
+// ─────────────────────────────────────────────
+// GET /api/events/:id
+// Get single event
+// ─────────────────────────────────────────────
+
+router.get(
+  "/:id",
+  getEventById
+);
+
+// ─────────────────────────────────────────────
+// PUT /api/events/:id
+// Update event
+// ─────────────────────────────────────────────
+
+router.put(
+  "/:id",
+  updateEvent
+);
+
+// ─────────────────────────────────────────────
+// DELETE /api/events/:id
+// Delete event
+// ─────────────────────────────────────────────
+
+router.delete(
+  "/:id",
+  deleteEvent
+);
 
 export default router;
