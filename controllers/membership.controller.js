@@ -7,7 +7,7 @@ import {
 
 import { randomUUID } from "crypto";
 
-import Membership from "../models/membership.model.js";
+import Membership from "../models/Membership.model.js";
 import r2 from "../config/r2.js";
 
 const router = express.Router();
